@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>สรุปคะแนนประเมินรายหน่วยงาน</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Prompt', sans-serif; background-color: #f3f4f6; }
+    </style>
+</head>
+<body class="text-gray-800 p-4 md:p-8">
+
+    <div class="max-w-6xl mx-auto space-y-6">
+        
+        <header class="bg-white rounded-2xl shadow-sm p-6 border border-gray-100 flex flex-col md:flex-row justify-between items-center">
+            <div>
+                <h1 class="text-2xl font-bold text-gray-800">📊 สรุปคะแนนประเมินแยกตามหน่วยงาน</h1>
+                <p class="text-gray-500 mt-1">วิเคราะห์คะแนนเฉลี่ย จากผู้ตอบคำถามทั้งหมด 43 คน</p>
+            </div>
+            <div class="mt-4 md:mt-0 flex gap-4">
+                <div class="text-center px-4 py-2 bg-blue-50 rounded-lg">
+                    <span class="block text-sm text-blue-600 font-medium">คะแนนเฉลี่ยรวม</span>
+                    <span class="text-xl font-bold text-blue-800">5.65</span>
+                </div>
+            </div>
+        </header>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="bg-white rounded-2xl shadow-sm p-6 border border-gray-100 border-l-4 border-l-green-500">
+                <h3 class="text-sm font-medium text-gray-500 mb-1">หน่วยงานที่ได้คะแนนเฉลี่ยสูงสุด</h3>
+                <div class="text-lg font-bold text-gray-800">การตลาด, พนักงานจัดการ</div>
+                <div class="text-green-600 font-semibold mt-2 text-2xl">7.00 <span class="text-sm font-normal">คะแนน</span></div>
+            </div>
+            
+            <div class="bg-white rounded-2xl shadow-sm p-6 border border-gray-100 border-l-4 border-l-red-500">
+                <h3 class="text-sm font-medium text-gray-500 mb-1">หน่วยงานที่ได้คะแนนเฉลี่ยน้อยสุด</h3>
+                <div class="text-lg font-bold text-gray-800">ขายภาคกลาง</div>
+                <div class="text-red-600 font-semibold mt-2 text-2xl">4.33 <span class="text-sm font-normal">คะแนน</span></div>
+            </div>
+
+            <div class="bg-white rounded-2xl shadow-sm p-6 border border-gray-100 border-l-4 border-l-purple-500">
+                <h3 class="text-sm font-medium text-gray-500 mb-1">หน่วยงานที่ส่งตัวแทนตอบมากที่สุด</h3>
+                <div class="text-lg font-bold text-gray-800">ขายโมเดิร์นเทรด 3</div>
+                <div class="text-purple-600 font-semibold mt-2 text-2xl">6 <span class="text-sm font-normal">คน</span></div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden relative" id="ai-section">
+            <div class="p-6 border-b border-gray-100 flex flex-col md:flex-row justify-between items-center bg-gradient-to-r from-indigo-50 to-purple-50 gap-4">
+                <div class="flex items-center gap-3">
+                    <span class="text-3xl">✨</span>
+                    <div>
+                        <h2 class="text-xl font-bold text-indigo-900">AI ผู้ช่วยวิเคราะห์ข้อมูล (Gemini)</h2>
+                        <p class="text-sm text-indigo-700 mt-1">วิเคราะห์แนวโน้มและให้ข้อเสนอแนะเชิงกลยุทธ์จากคะแนนประเมิน</p>
+                    </div>
+                </div>
+                <button id="btn-analyze" onclick="generateAIInsights()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl font-medium transition-all duration-200 flex items-center gap-2 shadow-sm hover:shadow-md active:scale-95 whitespace-nowrap">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clip-rule="evenodd" />
+                    </svg>
+                    วิเคราะห์เชิงลึกด้วย AI
+                </button>
+            </div>
+            <div id="ai-result-container" class="p-6 hidden">
+                <div id="ai-loading" class="hidden flex-col items-center justify-center py-10 text-indigo-500">
+                    <svg class="animate-spin -ml-1 mr-3 h-10 w-10 text-indigo-600 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <p class="animate-pulse font-medium text-lg">กำลังให้ Gemini ประมวลผลและวิเคราะห์ข้อมูล...</p>
+                    <p class="text-sm text-indigo-400 mt-2">อาจใช้เวลาสักครู่</p>
+                </div>
+                <div id="ai-content" class="text-gray-700 leading-relaxed space-y-4 prose max-w-none">
+                    <!-- AI Content will be injected here -->
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-sm p-6 border border-gray-100">
+            <h2 class="text-xl font-bold text-gray-800 mb-4">📈 กราฟเปรียบเทียบคะแนนเฉลี่ยแต่ละหน่วยงาน</h2>
+            <div class="relative h-[500px] w-full">
+                <canvas id="scoreChart"></canvas>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <div class="p-6 border-b border-gray-100">
+                <h2 class="text-xl font-bold text-gray-800">📋 ข้อมูลรายละเอียด</h2>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-gray-50 text-gray-600 text-sm">
+                            <th class="p-4 font-semibold">อันดับ</th>
+                            <th class="p-4 font-semibold">หน่วยงาน</th>
+                            <th class="p-4 font-semibold text-center">คะแนนเฉลี่ย</th>
+                            <th class="p-4 font-semibold text-center">จำนวน (คน)</th>
+                            <th class="p-4 font-semibold text-center">คะแนนต่ำสุด</th>
+                            <th class="p-4 font-semibold text-center">คะแนนสูงสุด</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody" class="divide-y divide-gray-100">
+                        <!-- Table rows will be inserted here by JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // ข้อมูลที่ผ่านการสรุปและคำนวณค่าเฉลี่ยเรียงจากมากไปน้อย
+        const data = [
+            { name: "การตลาด", avg: 7.00, count: 2, min: 6, max: 8 },
+            { name: "พนักงานจัดการ", avg: 7.00, count: 1, min: 7, max: 7 },
+            { name: "ขายโมเดิร์นเทรด 1 (บุญถาวรฯ)", avg: 6.67, count: 3, min: 5, max: 8 },
+            { name: "ขายภาคอีสาน", avg: 6.50, count: 2, min: 5, max: 8 },
+            { name: "ขายสปป.ลาวและกัมพูชา", avg: 6.40, count: 5, min: 5, max: 8 },
+            { name: "ขายโมเดิร์นเทรด 2 (โฮมโปรฯ)", avg: 6.25, count: 4, min: 5, max: 8 },
+            { name: "ขายโมเดิร์นเทรด 3 (ไทวัสดุฯ)", avg: 5.67, count: 6, min: 4, max: 7 },
+            { name: "ส่วนขายต่างจังหวัด", avg: 5.50, count: 2, min: 5, max: 6 },
+            { name: "ขายโครงการ", avg: 5.33, count: 3, min: 4, max: 6 },
+            { name: "ขายภาคเหนือ", avg: 5.25, count: 4, min: 4, max: 7 },
+            { name: "พัฒนาช่องทางการขาย", avg: 5.00, count: 2, min: 4, max: 6 },
+            { name: "ขายกรุงเทพและปริมณฑล", avg: 5.00, count: 2, min: 3, max: 7 },
+            { name: "ขายภาคใต้", avg: 4.75, count: 4, min: 4, max: 5 },
+            { name: "ขายภาคกลาง", avg: 4.33, count: 3, min: 2, max: 6 }
+        ];
+
+        const ctx = document.getElementById('scoreChart').getContext('2d');
+        
+        // กำหนดสีแท่งกราฟตามระดับคะแนน
+        const getBarColor = (score) => {
+            if (score >= 6.5) return 'rgba(34, 197, 94, 0.8)'; // Green (High)
+            if (score >= 5.5) return 'rgba(59, 130, 246, 0.8)'; // Blue (Mid-High)
+            if (score >= 5.0) return 'rgba(245, 158, 11, 0.8)'; // Yellow (Mid)
+            return 'rgba(239, 68, 68, 0.8)'; // Red (Low)
+        };
+
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: data.map(d => d.name),
+                datasets: [{
+                    label: 'คะแนนเฉลี่ย',
+                    data: data.map(d => d.avg),
+                    backgroundColor: data.map(d => getBarColor(d.avg)),
+                    borderRadius: 6,
+                    borderSkipped: false
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                indexAxis: 'y', // ทำให้เป็นกราฟแนวนอน
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: 'rgba(17, 24, 39, 0.9)',
+                        titleFont: { family: 'Prompt', size: 14 },
+                        bodyFont: { family: 'Prompt', size: 13 },
+                        padding: 12,
+                        callbacks: {
+                            afterLabel: function(context) {
+                                const item = data[context.dataIndex];
+                                return [
+                                    `จำนวนผู้ตอบ: ${item.count} คน`,
+                                    `คะแนนต่ำสุด: ${item.min} | สูงสุด: ${item.max}`
+                                ];
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        beginAtZero: true,
+                        max: 8,
+                        title: { display: true, text: 'คะแนน (เต็ม 8)', font: { family: 'Prompt' } }
+                    },
+                    y: {
+                        ticks: { font: { family: 'Prompt' } }
+                    }
+                }
+            }
+        });
+
+        const tableBody = document.getElementById('tableBody');
+        
+        data.forEach((item, index) => {
+            // จัดการสีของ Badge คะแนน
+            let avgColorClass = "bg-green-100 text-green-700";
+            if (item.avg < 5.0) avgColorClass = "bg-red-100 text-red-700";
+            else if (item.avg < 6.0) avgColorClass = "bg-yellow-100 text-yellow-700";
+            else if (item.avg < 6.5) avgColorClass = "bg-blue-100 text-blue-700";
+
+            const row = document.createElement('tr');
+            row.className = "hover:bg-gray-50 transition-colors";
+            row.innerHTML = `
+                <td class="p-4 text-gray-500">${index + 1}</td>
+                <td class="p-4 font-medium text-gray-800">${item.name}</td>
+                <td class="p-4 text-center">
+                    <span class="inline-block px-3 py-1 rounded-full font-semibold text-sm ${avgColorClass}">
+                        ${item.avg.toFixed(2)}
+                    </span>
+                </td>
+                <td class="p-4 text-center text-gray-600">${item.count}</td>
+                <td class="p-4 text-center text-gray-500">${item.min}</td>
+                <td class="p-4 text-center text-gray-500">${item.max}</td>
+            `;
+            tableBody.appendChild(row);
+        });
+
+        async function generateAIInsights() {
+            const btn = document.getElementById('btn-analyze');
+            const container = document.getElementById('ai-result-container');
+            const loading = document.getElementById('ai-loading');
+            const content = document.getElementById('ai-content');
+
+            // เปลี่ยนสถานะปุ่มเป็น Loading
+            btn.disabled = true;
+            btn.classList.add('opacity-50', 'cursor-not-allowed');
+            container.classList.remove('hidden');
+            loading.classList.remove('hidden');
+            loading.classList.add('flex');
+            content.classList.add('hidden');
+            content.innerHTML = '';
+
+            // เตรียมคำสั่งให้ AI (Prompt) โดยส่งข้อมูล array 'data' ไปให้
+            const prompt = `ในฐานะผู้เชี่ยวชาญด้าน HR และนักวิเคราะห์ข้อมูลองค์กรระดับสูง โปรดวิเคราะห์ผลคะแนนประเมินความพึงพอใจของหน่วยงานต่างๆ ในบริษัท จากข้อมูล JSON ด้านล่างนี้ (เรียงจากคะแนนมากไปน้อย คะแนนเต็ม 8):
+            
+${JSON.stringify(data, null, 2)}
+
+กรุณาวิเคราะห์และนำเสนอข้อมูลในรูปแบบที่น่าอ่านดังนี้:
+1. ภาพรวมสถานการณ์: สรุปสุขภาพองค์กรโดยรวมจากคะแนนที่มีอยู่
+2. กลุ่มที่เป็นจุดเด่น (Best Practice): หน่วยงานที่ได้คะแนนสูง และข้อสังเกต
+3. กลุ่มที่น่าเป็นห่วง (Needs Improvement): หน่วยงานที่ได้คะแนนรั้งท้าย 
+4. ข้อเสนอแนะเชิงกลยุทธ์ (Actionable Recommendations): เสนอแนะแนวทาง 2-3 ข้อสำหรับผู้บริหาร เพื่อเข้าไปแก้ไขปัญหาในกลุ่มที่น่าเป็นห่วง
+
+ข้อกำหนดในการตอบ:
+- ตอบเป็นภาษาไทยด้วยภาษาที่มืออาชีพและเข้าใจง่าย
+- จัดรูปแบบด้วย HTML tags เช่น <h3 class="text-lg font-bold text-indigo-800 mt-4 mb-2">, <p class="mb-2">, <ul class="list-disc pl-5 space-y-1 mb-4">, <li>, <strong> เพื่อให้พร้อมแสดงผลบนเว็บและดูสวยงาม
+- ห้ามครอบคำตอบด้วย Markdown Block (เช่น \`\`\`html) ส่งมาเฉพาะ HTML เปล่าๆ เท่านั้น`;
+
+            const apiKey = ""; // API key is handled automatically by the environment
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+
+            const payload = {
+                contents: [{ parts: [{ text: prompt }] }]
+            };
+
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                
+                const result = await response.json();
+                
+                if (result.candidates && result.candidates.length > 0 && result.candidates[0].content) {
+                    let htmlContent = result.candidates[0].content.parts[0].text;
+                    
+                    // ทำความสะอาด Markdown ที่ AI อาจจะเผลอใส่มา
+                    htmlContent = htmlContent.replace(/```html/g, '').replace(/```/g, '');
+                    
+                    content.innerHTML = htmlContent;
+                } else {
+                    content.innerHTML = '<div class="p-4 bg-red-50 text-red-700 rounded-lg">เกิดข้อผิดพลาดในการรับข้อมูลจาก AI กรุณาลองใหม่อีกครั้ง</div>';
+                }
+            } catch (error) {
+                console.error("Error calling Gemini API:", error);
+                content.innerHTML = '<div class="p-4 bg-red-50 text-red-700 rounded-lg">ไม่สามารถเชื่อมต่อกับระบบ AI ได้ในขณะนี้ โปรดตรวจสอบการเชื่อมต่ออินเทอร์เน็ต</div>';
+            } finally {
+                // คืนสถานะปุ่มกลับมาเป็นปกติ
+                loading.classList.add('hidden');
+                loading.classList.remove('flex');
+                content.classList.remove('hidden');
+                btn.disabled = false;
+                btn.classList.remove('opacity-50', 'cursor-not-allowed');
+            }
+        }
+    </script>
+</body>
+</html>
