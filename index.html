@@ -1,0 +1,849 @@
+<!DOCTYPE html>
+<html lang="th" class="h-full bg-slate-950 text-slate-100">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Co-workers Tier List Maker</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- html2canvas for Exporting Image -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Prompt', 'Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        .drag-over {
+            background-color: rgba(99, 102, 241, 0.15) !important;
+            border: 2px dashed #6366f1 !important;
+        }
+        /* Custom scrollbar for premium look */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #020617;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #1e293b;
+            border-radius: 9999px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #4f46e5;
+        }
+        .tier-row {
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .coworker-card {
+            transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s;
+        }
+        .coworker-card:active {
+            cursor: grabbing;
+        }
+    </style>
+</head>
+<body class="min-h-full flex flex-col antialiased bg-slate-950 text-slate-200">
+
+    <!-- Header Section -->
+    <header class="border-b border-slate-800 bg-slate-900/90 backdrop-blur sticky top-0 z-40 px-4 py-3 shadow-lg">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+            <div class="flex items-center gap-3">
+                <div class="bg-indigo-600 p-2.5 rounded-2xl text-white shadow-lg shadow-indigo-500/20">
+                    <i class="fa-solid fa-users text-2xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold bg-gradient-to-r from-white via-slate-100 to-indigo-300 bg-clip-text text-transparent">
+                        Co-workers Tier List Maker
+                    </h1>
+                    <p class="text-xs text-slate-400 mt-0.5">
+                        ระบบจัดอันดับทีมและเพื่อนร่วมงาน อ้างอิงรายชื่อจากไฟล์ <span class="text-indigo-400 font-semibold">image_6bf47f.png</span>
+                    </p>
+                </div>
+            </div>
+            
+            <div class="flex flex-wrap gap-2">
+                <button onclick="exportToImage()" class="bg-indigo-600 hover:bg-indigo-500 text-white font-medium py-2 px-4 rounded-xl text-sm transition flex items-center gap-2 shadow-lg shadow-indigo-600/20">
+                    <i class="fa-solid fa-circle-down"></i> เซฟรูปภาพ Tier List
+                </button>
+                <button onclick="resetToDefault()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 font-medium py-2 px-4 rounded-xl text-sm transition flex items-center gap-2">
+                    <i class="fa-solid fa-clock-rotate-left"></i> รีเซ็ตรายชื่อใหม่
+                </button>
+                <button onclick="openCustomItemModal()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-medium py-2 px-4 rounded-xl text-sm transition flex items-center gap-2 shadow-lg shadow-emerald-600/20">
+                    <i class="fa-solid fa-user-plus"></i> เพิ่มชื่อเพื่อนร่วมงาน
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Workspace -->
+    <main class="flex-grow max-w-7xl w-full mx-auto p-4 flex flex-col lg:flex-row gap-6">
+        
+        <!-- Left Side: Tier List Board -->
+        <div class="flex-grow flex flex-col gap-4 lg:w-2/3">
+            <!-- Toast notification container -->
+            <div id="toast" class="hidden fixed bottom-5 right-5 z-50 bg-slate-900 border border-slate-700 text-white px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-3 transition-all transform translate-y-10 opacity-0">
+                <span id="toast-icon" class="text-indigo-400"><i class="fa-solid fa-circle-check"></i></span>
+                <span id="toast-message" class="text-sm font-medium">บันทึกเรียบร้อย!</span>
+            </div>
+
+            <!-- Tier List Box for capture -->
+            <div id="tier-list-container" class="bg-slate-900 border border-slate-800/80 rounded-2xl overflow-hidden p-5 shadow-2xl">
+                <!-- Tier Board Header for image export -->
+                <div class="mb-4 flex justify-between items-center border-b border-slate-800/50 pb-3">
+                    <div>
+                        <h2 class="text-lg font-bold text-white flex items-center gap-2">
+                            <span class="w-2.5 h-2.5 rounded-full bg-indigo-500"></span>
+                            Co-workers Tier List
+                        </h2>
+                        <p class="text-xs text-slate-400 mt-0.5">จัดอันดับสุดยอดทีมและเพื่อนร่วมงานในองค์กร</p>
+                    </div>
+                    <span class="text-[10px] text-slate-500 bg-slate-950 px-2.5 py-1 rounded-lg border border-slate-800 font-mono">image_6bf47f.png</span>
+                </div>
+
+                <!-- Tiers Area -->
+                <div id="tiers-parent" class="flex flex-col gap-3">
+                    <!-- Tiers S A B C D will be dynamically injected here -->
+                </div>
+            </div>
+
+            <!-- Instruction Banner -->
+            <div class="flex justify-between items-center bg-slate-900/40 p-3.5 rounded-xl border border-slate-800/60 text-xs">
+                <div class="flex items-center gap-2 text-slate-400">
+                    <i class="fa-solid fa-circle-info text-indigo-400"></i>
+                    <span>ลากและวางการ์ดรายชื่อเพื่อนร่วมงานเข้าในแถวจัดอันดับ S, A, B, C, D ได้ตามต้องการ</span>
+                </div>
+                <button onclick="addNewTier()" class="text-indigo-400 hover:text-indigo-300 font-semibold flex items-center gap-1.5 transition">
+                    <i class="fa-solid fa-folder-plus"></i> เพิ่มแถวจัดอันดับ
+                </button>
+            </div>
+        </div>
+
+        <!-- Right Side: Employee list / Item Pool -->
+        <div class="lg:w-1/3 flex flex-col gap-4">
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 flex flex-col h-[650px] shadow-2xl sticky top-24">
+                
+                <!-- Search & Filters Header -->
+                <div class="flex flex-col gap-3 mb-4">
+                    <div class="flex justify-between items-center">
+                        <div class="flex items-center gap-2">
+                            <i class="fa-solid fa-address-book text-slate-400"></i>
+                            <h3 class="font-bold text-slate-200 text-sm">รายชื่อเพื่อนร่วมงาน (78 คน)</h3>
+                        </div>
+                        <span id="pool-count" class="bg-indigo-950/60 border border-indigo-900/50 text-indigo-300 text-xs font-semibold px-2.5 py-0.5 rounded-full">0 ท่าน</span>
+                    </div>
+
+                    <!-- Live Search Bar -->
+                    <div class="relative">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-500 text-sm"></i>
+                        <input type="text" id="coworker-search" oninput="filterCoworkers()" placeholder="ค้นหารายชื่อเพื่อนร่วมงาน..." 
+                               class="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-4 py-2 text-xs text-slate-200 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all">
+                    </div>
+
+                    <!-- Filter category tabs based on blocks -->
+                    <div class="flex gap-1 overflow-x-auto bg-slate-950 p-1 rounded-lg border border-slate-800 text-[10px] whitespace-nowrap">
+                        <button onclick="switchCategory('all')" id="tab-all" class="flex-1 px-3 py-1.5 text-center font-medium rounded-md transition bg-slate-800 text-white">
+                            ทั้งหมด
+                        </button>
+                        <button onclick="switchCategory('male')" id="tab-male" class="flex-1 px-3 py-1.5 text-center font-medium rounded-md text-slate-400 hover:text-slate-200 transition">
+                            ชาย (นาย)
+                        </button>
+                        <button onclick="switchCategory('female')" id="tab-female" class="flex-1 px-3 py-1.5 text-center font-medium rounded-md text-slate-400 hover:text-slate-200 transition">
+                            หญิง (นาง/น.ส.)
+                        </button>
+                        <button onclick="switchCategory('custom')" id="tab-custom" class="flex-1 px-3 py-1.5 text-center font-medium rounded-md text-slate-400 hover:text-slate-200 transition">
+                            เพิ่มขึ้นเอง
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Drag-back-to-pool Dropzone container -->
+                <div id="items-pool" class="flex-grow overflow-y-auto bg-slate-950/40 rounded-xl border border-slate-800/80 p-3.5 flex flex-wrap gap-2.5 content-start transition-all"
+                     ondragover="allowDrop(event)" ondragleave="dragLeave(event)" ondrop="dropToPool(event)">
+                    <!-- Coworker lists generated via JS -->
+                </div>
+
+                <!-- Custom visual switcher (Card or List View) -->
+                <div class="mt-3 pt-3 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-slate-400">
+                    <span>ต้องการจัดกลุ่มอื่นๆ หรือลบ ให้ลากชื่อมาวางที่กล่องนี้</span>
+                    <div class="flex gap-1 bg-slate-950 p-0.5 rounded border border-slate-800">
+                        <button onclick="toggleViewMode('compact')" id="btn-view-compact" class="px-2 py-0.5 text-xs rounded bg-slate-800 text-white" title="แบบกระชับ">
+                            <i class="fa-solid fa-table-cells"></i>
+                        </button>
+                        <button onclick="toggleViewMode('large')" id="btn-view-large" class="px-2 py-0.5 text-xs rounded text-slate-500 hover:text-slate-300" title="การ์ดรูป">
+                            <i class="fa-solid fa-id-card"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Custom Item Modal -->
+    <div id="custom-item-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl transform scale-95 transition-all">
+            <div class="px-5 py-4 border-b border-slate-800 flex justify-between items-center bg-slate-900/50">
+                <h3 class="font-bold text-slate-200 text-sm flex items-center gap-2">
+                    <i class="fa-solid fa-user-plus text-indigo-500"></i>
+                    เพิ่มเพื่อนร่วมงานใหม่
+                </h3>
+                <button onclick="closeCustomItemModal()" class="text-slate-400 hover:text-slate-200 transition">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <div class="p-5 flex flex-col gap-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1.5">คำนำหน้า (เลือกได้)</label>
+                    <select id="custom-prefix" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-indigo-500 transition">
+                        <option value="นาย">นาย</option>
+                        <option value="น.ส.">น.ส.</option>
+                        <option value="นาง">นาง</option>
+                        <option value="">ไม่มีคำนำหน้า (ใส่เฉพาะชื่อ)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1.5">ชื่อจริง - นามสกุล (ไทย)</label>
+                    <input type="text" id="custom-fullname" placeholder="ตัวอย่าง: สมชาย รักงานดี" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-slate-200 focus:outline-none focus:border-indigo-500 transition">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1.5">แผนก / สังกัดกลุ่ม (เลือกเพื่อความสะดวก)</label>
+                    <input type="text" id="custom-dept" placeholder="เช่น ทีมวิศวกรรม, ทีมไอที" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-slate-200 focus:outline-none focus:border-indigo-500 transition">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1.5">เลือกเฉดสีของการ์ด</label>
+                    <div class="grid grid-cols-5 gap-2" id="color-selector">
+                        <button onclick="selectThemeColor('bg-indigo-600/30 border-indigo-500')" class="h-8 rounded-lg bg-indigo-600/30 border-2 border-indigo-500 theme-color-btn"></button>
+                        <button onclick="selectThemeColor('bg-emerald-600/30 border-emerald-500')" class="h-8 rounded-lg bg-emerald-600/30 border-2 border-transparent theme-color-btn"></button>
+                        <button onclick="selectThemeColor('bg-amber-600/30 border-amber-500')" class="h-8 rounded-lg bg-amber-600/30 border-2 border-transparent theme-color-btn"></button>
+                        <button onclick="selectThemeColor('bg-rose-600/30 border-rose-500')" class="h-8 rounded-lg bg-rose-600/30 border-2 border-transparent theme-color-btn"></button>
+                        <button onclick="selectThemeColor('bg-slate-700/50 border-slate-500')" class="h-8 rounded-lg bg-slate-700/50 border-2 border-transparent theme-color-btn"></button>
+                    </div>
+                </div>
+            </div>
+            <div class="px-5 py-4 border-t border-slate-800 flex justify-end gap-2 bg-slate-900/30">
+                <button onclick="closeCustomItemModal()" class="px-4 py-2 rounded-xl text-xs text-slate-400 hover:text-slate-200 font-semibold transition">ยกเลิก</button>
+                <button onclick="createCustomCoworker()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-semibold shadow-lg shadow-indigo-600/20 transition">เพิ่มรายชื่อ</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="border-t border-slate-900 bg-slate-950 py-4 text-center text-xs text-slate-500 mt-auto">
+        <p>© 2026 Co-workers Tier List Maker • จัดอันดับแผนกและรายชื่อจากไฟล์อ้างอิง image_6bf47f.png</p>
+    </footer>
+
+    <script>
+        // Default Tier List structure
+        let tiers = [
+            { id: 'tier-s', name: 'S', color: 'bg-rose-600' },
+            { id: 'tier-a', name: 'A', color: 'bg-orange-500' },
+            { id: 'tier-b', name: 'B', color: 'bg-amber-500' },
+            { id: 'tier-c', name: 'C', color: 'bg-emerald-600' },
+            { id: 'tier-d', name: 'D', color: 'bg-indigo-600' }
+        ];
+
+        // Extracted names from "image_6bf47f.png"
+        const defaultCoworkers = [
+            { id: 'cw-1', title: 'นาย', name: 'จิโรภาส เจริญภักดี', initials: 'จิ', group: 'block-1' },
+            { id: 'cw-2', title: 'นาย', name: 'สุรวุฒิ ลอไพบูลย์', initials: 'สุ', group: 'block-2' },
+            { id: 'cw-3', title: 'นาง', name: 'เทียมรัตน์ วงศ์ปิยะพันธ์', initials: 'เท', group: 'block-2' },
+            { id: 'cw-4', title: 'น.ส.', name: 'พลอยไพลิน ศิลาเกษ', initials: 'พล', group: 'block-3' },
+            { id: 'cw-5', title: '', name: 'สุคนธมาส คิบธุอุดม', initials: 'สุ', group: 'block-3' },
+            { id: 'cw-6', title: '', name: 'ปริศนา ติสาร', initials: 'ปร', group: 'block-3' },
+            { id: 'cw-7', title: 'นาย', name: 'บุญชู ไพศาลมหาสมบัติ', initials: 'บุ', group: 'block-4' },
+            { id: 'cw-8', title: '', name: 'สุพรรณี คาบาง', initials: 'สุ', group: 'block-4' },
+            { id: 'cw-9', title: '', name: 'อัญชลี อุทธศรี', initials: 'อัญ', group: 'block-4' },
+            { id: 'cw-10', title: '', name: 'กานดา โชติรัตนอมรกิจ', initials: 'กา', group: 'block-4' },
+            { id: 'cw-11', title: 'นาย', name: 'พีระพงษ์ อนุกูล', initials: 'พี', group: 'block-5' },
+            { id: 'cw-12', title: '', name: 'อลิสรา สาธร', initials: 'อล', group: 'block-5' },
+            { id: 'cw-13', title: '', name: 'มลิวรรณ แซ่ว่อง', initials: 'มล', group: 'block-5' },
+            { id: 'cw-14', title: '', name: 'นภาภรณ์ คาบาง', initials: 'นภ', group: 'block-5' },
+            { id: 'cw-15', title: '', name: 'อรสา เตมีย์', initials: 'อร', group: 'block-5' },
+            { id: 'cw-16', title: '', name: 'ปริณดา เอกนาสิงห์', initials: 'ปร', group: 'block-5' },
+            { id: 'cw-17', title: 'นาย', name: 'เทพพร ดัดขุนทด', initials: 'เท', group: 'block-6' },
+            { id: 'cw-18', title: '', name: 'ศรัญญู ทูลพารัตน์', initials: 'ศร', group: 'block-6' },
+            { id: 'cw-19', title: '', name: 'ศิรปภัสร์ จินดาจารุพิศุทธ์', initials: 'ศิ', group: 'block-6' },
+            { id: 'cw-20', title: '', name: 'อัจฉิมา ทองพา', initials: 'อัจ', group: 'block-6' },
+            { id: 'cw-21', title: 'นาย', name: 'สมชัย ไชยพฤทธิ์', initials: 'สม', group: 'block-7' },
+            { id: 'cw-22', title: '', name: 'ศิศรินทร์ ช้างแก้ว', initials: 'ศิ', group: 'block-8' },
+            { id: 'cw-23', title: '', name: 'ธณัชกฤศ นรมั่ง', initials: 'ธณ', group: 'block-8' },
+            { id: 'cw-24', title: '', name: 'นภาวรรณ คาบาง', initials: 'นภ', group: 'block-8' },
+            { id: 'cw-25', title: '', name: 'เปมิกา วิสุทธิปราญช์', initials: 'เป', group: 'block-8' },
+            { id: 'cw-26', title: 'นาย', name: 'ชาญวิทย์ ไชโย', initials: 'ชา', group: 'block-9' },
+            { id: 'cw-27', title: 'นาย', name: 'วิศัลย์ อัศวพิทยานนท์', initials: 'วิ', group: 'block-9' },
+            { id: 'cw-28', title: '', name: 'ณัฐพล เกิดไกร', initials: 'ณั', group: 'block-9' },
+            { id: 'cw-29', title: '', name: 'จารุณี ศรีวงศ์แก้ว', initials: 'จา', group: 'block-9' },
+            { id: 'cw-30', title: '', name: 'ภคอร ปิติตรีชัชดา', initials: 'ภค', group: 'block-9' },
+            { id: 'cw-31', title: 'น.ส.', name: 'พัชริดา สุดประโคน', initials: 'พั', group: 'block-10' },
+            { id: 'cw-32', title: '', name: 'ภิชา ศรีสอน', initials: 'ภิ', group: 'block-10' },
+            { id: 'cw-33', title: '', name: 'เกริกฤทธิ์ อิทธิวิวัฒนกุล', initials: 'เก', group: 'block-10' },
+            { id: 'cw-34', title: '', name: 'ศิริลักษณ์ อร่ามโรจน์', initials: 'ศิ', group: 'block-10' },
+            { id: 'cw-35', title: '', name: 'สุรีรัตน์ แจ่มแจ้ง', initials: 'สุ', group: 'block-10' },
+            { id: 'cw-36', title: 'นาย', name: 'เอกชัย ว่องกิจดาการ', initials: 'เอก', group: 'block-11' },
+            { id: 'cw-37', title: '', name: 'ธนบดี คุมแก้ว', initials: 'ธน', group: 'block-11' },
+            { id: 'cw-38', title: '', name: 'ชาลิดา อมาตยกุลกานต์', initials: 'ชา', group: 'block-11' },
+            { id: 'cw-39', title: '', name: 'ณัฐกานต์ อินทนิน', initials: 'ณั', group: 'block-11' },
+            { id: 'cw-40', title: '', name: 'ศรินภัสร์ เปรมะไตรศักดิ์', initials: 'ศร', group: 'block-11' },
+            { id: 'cw-41', title: '', name: 'ปฏิญญ์วัจน์ ศิริชน', initials: 'ปฏ', group: 'block-11' },
+            { id: 'cw-42', title: 'นาย', name: 'ศุภณัฎปวิชญ์ ตั้งจิรสินภูษิต', initials: 'ศุ', group: 'block-12' },
+            { id: 'cw-43', title: '', name: 'พิเชษฐ์ อินทราภรณ์', initials: 'พิ', group: 'block-12' },
+            { id: 'cw-44', title: '', name: 'ศุภโชค ชื่นโชคชัย', initials: 'ศุ', group: 'block-12' },
+            { id: 'cw-45', title: '', name: 'ณัฐชยาน์ ชาญชัยสถิตพงษ์', initials: 'ณั', group: 'block-12' },
+            { id: 'cw-46', title: '', name: 'ปรียานุช คองอ่อน', initials: 'ปร', group: 'block-12' },
+            { id: 'cw-47', title: 'น.ส.', name: 'ทวีพร กิตติธนากร', initials: 'ทว', group: 'block-13' },
+            { id: 'cw-48', title: '', name: 'ณณกร ศรีเขตต์', initials: 'ณณ', group: 'block-13' },
+            { id: 'cw-49', title: '', name: 'ปองพล อินทรานนท์', initials: 'ปอ', group: 'block-13' },
+            { id: 'cw-50', title: '', name: 'ภิญญา ชนินทรภิวงศ์', initials: 'ภิ', group: 'block-13' },
+            { id: 'cw-51', title: '', name: 'มัลลิกา มณีรัตน์', initials: 'มั', group: 'block-14' },
+            { id: 'cw-52', title: '', name: 'ขวัญปิยาพัช สุวรรณสังข์', initials: 'ขว', group: 'block-14' },
+            { id: 'cw-53', title: '', name: 'รญาดา ธิติกรรณิชย์', initials: 'รญ', group: 'block-14' },
+            { id: 'cw-54', title: '', name: 'กานต์สินี บุญพัชรนนท์', initials: 'กา', group: 'block-14' },
+            { id: 'cw-55', title: '', name: 'พิชญา เสือจันทร์', initials: 'พิ', group: 'block-14' },
+            { id: 'cw-56', title: '', name: 'รัตนา บุญงาม', initials: 'รั', group: 'block-14' },
+            { id: 'cw-57', title: 'นาย', name: 'ประทีป กิตติวิจิตร', initials: 'ปร', group: 'block-15' },
+            { id: 'cw-58', title: '', name: 'วิรุฬห์ ปฏิโภคสุทธิ์', initials: 'วิ', group: 'block-16' },
+            { id: 'cw-59', title: '', name: 'ณัฐวุฒิ เอี่ยวประดิษฐ์', initials: 'ณั', group: 'block-17' },
+            { id: 'cw-60', title: '', name: 'ธัญชนก จำนง', initials: 'ธัญ', group: 'block-17' },
+            { id: 'cw-61', title: 'นาง', name: 'ธัญนันท์ จันทวี', initials: 'ธัญ', group: 'block-18' },
+            { id: 'cw-62', title: '', name: 'ชวิต ตระกูลศิริชัย', initials: 'ชว', group: 'block-19' },
+            { id: 'cw-63', title: '', name: 'เมธิล นัยตั้ง', initials: 'เม', group: 'block-19' },
+            { id: 'cw-64', title: '', name: 'ชุติมา สิริธนะวัฒน์', initials: 'ชุ', group: 'block-19' },
+            { id: 'cw-65', title: '', name: 'สุภัค สังวรวรรณา', initials: 'สุ', group: 'block-20' },
+            { id: 'cw-66', title: '', name: 'ณัฐติมา อาภาธนานนท์', initials: 'ณั', group: 'block-20' },
+            { id: 'cw-67', title: '', name: 'ปิยวัตร เชื้อหงษ์แก้ว', initials: 'ปิ', group: 'block-20' },
+            { id: 'cw-68', title: 'น.ส.', name: 'กรณสุดา สมพพกุลเวช', initials: 'กร', group: 'block-21' },
+            { id: 'cw-69', title: '', name: 'ชยากร คล้ายแก้ว', initials: 'ชย', group: 'block-21' },
+            { id: 'cw-70', title: '', name: 'ธัญญลักษณ์ คันธรักษ์', initials: 'ธั', group: 'block-21' },
+            { id: 'cw-71', title: '', name: 'ภาวิณี วงศ์ผกา', initials: 'ภา', group: 'block-21' },
+            { id: 'cw-72', title: '', name: 'รัศติรส เรืองสารี', initials: 'รั', group: 'block-21' },
+            { id: 'cw-73', title: '', name: 'ภัคพิไล วิษณุวัฒนากิจ', initials: 'ภั', group: 'block-21' },
+            { id: 'cw-74', title: '', name: 'วิรวรรณ ศรนิยม', initials: 'วิ', group: 'block-21' },
+            { id: 'cw-75', title: 'นาย', name: 'พงศกร มากวงษ์', initials: 'พง', group: 'block-22' },
+            { id: 'cw-76', title: '', name: 'วรรษกร วงศ์คต', initials: 'วร', group: 'block-22' },
+            { id: 'cw-77', title: '', name: 'ลักษณิกา ยุทธนาวราภรณ์', initials: 'ลั', group: 'block-22' },
+            { id: 'cw-78', title: '', name: 'เสาวลักษณ์ ชื่นสุขรักษ์', initials: 'เส', group: 'block-22' }
+        ];
+
+        let coworkerDb = [...defaultCoworkers];
+        let currentCategoryFilter = 'all';
+        let currentSearchQuery = '';
+        let viewMode = 'compact'; // 'compact' or 'large'
+        let selectedColorClass = 'bg-indigo-600/30 border-indigo-500';
+
+        // Palette gradients list for unique coworkers cards
+        const themeGradients = [
+            'from-indigo-500/80 to-purple-600/80',
+            'from-emerald-500/80 to-teal-600/80',
+            'from-amber-500/80 to-orange-600/80',
+            'from-rose-500/80 to-pink-600/80',
+            'from-cyan-500/80 to-blue-600/80',
+            'from-violet-500/80 to-fuchsia-600/80',
+            'from-lime-500/80 to-emerald-600/80',
+            'from-sky-500/80 to-indigo-600/80'
+        ];
+
+        // Generate visual card styling based on hash ID
+        function getAvatarStyle(id) {
+            const index = id.split('-').pop() % themeGradients.length;
+            return themeGradients[isNaN(index) ? 0 : index];
+        }
+
+        // Initialize App on Window Load
+        window.onload = function() {
+            renderTiers();
+            renderItemsPool();
+            loadSavedState();
+        }
+
+        // Render Tiers (S, A, B, C, D)
+        function renderTiers() {
+            const container = document.getElementById('tiers-parent');
+            container.innerHTML = '';
+
+            tiers.forEach((tier, index) => {
+                const tierRow = document.createElement('div');
+                tierRow.className = "tier-row flex min-h-[100px] border border-slate-800/80 rounded-2xl overflow-hidden bg-slate-900/30 relative shadow-inner";
+                tierRow.innerHTML = `
+                    <!-- Tier label container -->
+                    <div class="w-24 md:w-28 flex-shrink-0 ${tier.color} p-3 flex flex-col justify-center items-center text-center relative group select-none">
+                        <span contenteditable="true" onblur="updateTierName('${tier.id}', this.innerText)" class="font-bold text-xl md:text-2xl text-white focus:outline-none focus:bg-white/20 px-2 rounded cursor-text leading-tight">${tier.name}</span>
+                        
+                        <!-- Mini customization button inside Tier label -->
+                        <div class="absolute bottom-1 right-1 opacity-0 group-hover:opacity-100 transition duration-150">
+                            <button onclick="changeTierColor('${tier.id}')" title="เปลี่ยนสีแถว" class="text-[10px] bg-slate-950/70 p-1.5 rounded hover:bg-slate-950 text-white">
+                                <i class="fa-solid fa-palette"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Drag-over and placement zone -->
+                    <div id="${tier.id}" class="flex-grow flex flex-wrap gap-2.5 p-3 items-center content-center min-w-0" 
+                         ondragover="allowDrop(event)" ondragleave="dragLeave(event)" ondrop="drop(event)">
+                        <!-- Coworker cards will go here -->
+                    </div>
+
+                    <!-- Row rearrangement buttons -->
+                    <div class="flex-shrink-0 w-9 flex flex-col justify-between items-center border-l border-slate-800/60 bg-slate-950/30 py-2">
+                        <button onclick="moveTier('${index}', 'up')" class="text-slate-500 hover:text-slate-300 transition text-xs" title="เลื่อนขึ้น">
+                            <i class="fa-solid fa-chevron-up"></i>
+                        </button>
+                        <button onclick="deleteTier('${tier.id}')" class="text-rose-500/70 hover:text-rose-400 transition text-xs" title="ลบแถวนี้">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                        <button onclick="moveTier('${index}', 'down')" class="text-slate-500 hover:text-slate-300 transition text-xs" title="เลื่อนลง">
+                            <i class="fa-solid fa-chevron-down"></i>
+                        </button>
+                    </div>
+                `;
+                container.appendChild(tierRow);
+            });
+        }
+
+        // Render coworker items in the pool
+        function renderItemsPool() {
+            const pool = document.getElementById('items-pool');
+            pool.innerHTML = '';
+
+            let filtered = coworkerDb;
+
+            // Step 1: Category filter
+            if (currentCategoryFilter === 'male') {
+                filtered = coworkerDb.filter(cw => cw.title === 'นาย');
+            } else if (currentCategoryFilter === 'female') {
+                filtered = coworkerDb.filter(cw => cw.title === 'นาง' || cw.title === 'น.ส.');
+            } else if (currentCategoryFilter === 'custom') {
+                filtered = coworkerDb.filter(cw => cw.isCustom);
+            }
+
+            // Step 2: Search filter
+            if (currentSearchQuery) {
+                filtered = filtered.filter(cw => cw.name.toLowerCase().includes(currentSearchQuery.toLowerCase()));
+            }
+
+            document.getElementById('pool-count').innerText = `${filtered.length} ท่าน`;
+
+            filtered.forEach(cw => {
+                const gradient = getAvatarStyle(cw.id);
+                let innerHtml = '';
+
+                if (viewMode === 'compact') {
+                    // Modern badge styling
+                    innerHtml = `
+                        <div id="${cw.id}" draggable="true" ondragstart="drag(event)" 
+                             class="coworker-card bg-slate-900 hover:bg-indigo-950/30 border border-slate-800 hover:border-indigo-500/50 rounded-xl px-2.5 py-1.5 cursor-grab active:cursor-grabbing hover:scale-[1.03] transition-all duration-150 flex items-center gap-2 select-none group max-w-xs shadow">
+                            <div class="w-5 h-5 rounded-full bg-gradient-to-br ${gradient} text-white flex items-center justify-center text-[9px] font-bold">
+                                ${cw.initials}
+                            </div>
+                            <div class="truncate">
+                                <span class="text-[11.5px] font-medium text-slate-200">${cw.name}</span>
+                            </div>
+                            <button onclick="removeCoworker('${cw.id}', event)" class="opacity-0 group-hover:opacity-100 text-[10px] text-slate-500 hover:text-rose-400 ml-1 transition duration-100">
+                                <i class="fa-solid fa-xmark"></i>
+                            </button>
+                        </div>
+                    `;
+                } else {
+                    // Full avatar Card layout style
+                    innerHtml = `
+                        <div id="${cw.id}" draggable="true" ondragstart="drag(event)" 
+                             class="coworker-card bg-slate-900 border border-slate-800 hover:border-indigo-500 rounded-xl p-3 w-[110px] h-[125px] flex flex-col items-center justify-between text-center cursor-grab active:cursor-grabbing hover:scale-105 transition-all duration-150 shadow-md group relative">
+                            <button onclick="removeCoworker('${cw.id}', event)" class="absolute top-1.5 right-1.5 opacity-0 group-hover:opacity-100 text-xs text-slate-500 hover:text-rose-400 transition">
+                                <i class="fa-solid fa-xmark"></i>
+                            </button>
+                            <div class="w-11 h-11 rounded-full bg-gradient-to-br ${gradient} text-white flex items-center justify-center text-sm font-bold shadow-lg">
+                                ${cw.initials}
+                            </div>
+                            <div class="w-full mt-1.5">
+                                <p class="text-[10px] font-bold text-slate-100 leading-tight line-clamp-2">${cw.name.split(' ')[0]}</p>
+                                <span class="text-[8px] text-slate-500 block truncate mt-0.5">${cw.name.split(' ')[1] || ''}</span>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = innerHtml.trim();
+                pool.appendChild(tempDiv.firstChild);
+            });
+        }
+
+        function filterCoworkers() {
+            currentSearchQuery = document.getElementById('coworker-search').value.trim();
+            renderItemsPool();
+        }
+
+        function switchCategory(cat) {
+            currentCategoryFilter = cat;
+            const tabs = ['all', 'male', 'female', 'custom'];
+            tabs.forEach(t => {
+                const el = document.getElementById(`tab-${t}`);
+                if (t === cat) {
+                    el.className = "flex-1 px-3 py-1.5 text-center font-medium rounded-md transition bg-slate-800 text-white";
+                } else {
+                    el.className = "flex-1 px-3 py-1.5 text-center font-medium rounded-md text-slate-400 hover:text-slate-200 transition";
+                }
+            });
+            renderItemsPool();
+        }
+
+        function toggleViewMode(mode) {
+            viewMode = mode;
+            const btnCompact = document.getElementById('btn-view-compact');
+            const btnLarge = document.getElementById('btn-view-large');
+
+            if (mode === 'compact') {
+                btnCompact.className = "px-2 py-0.5 text-xs rounded bg-slate-800 text-white";
+                btnLarge.className = "px-2 py-0.5 text-xs rounded text-slate-500 hover:text-slate-300";
+            } else {
+                btnCompact.className = "px-2 py-0.5 text-xs rounded text-slate-500 hover:text-slate-300";
+                btnLarge.className = "px-2 py-0.5 text-xs rounded bg-slate-800 text-white";
+            }
+            renderItemsPool();
+            restoreDraggedItemsToTiers();
+        }
+
+        function allowDrop(ev) {
+            ev.preventDefault();
+            const dropzone = ev.target.closest('[id^="tier-"]') || ev.target.closest('#items-pool');
+            if (dropzone) {
+                dropzone.classList.add('drag-over');
+            }
+        }
+
+        function dragLeave(ev) {
+            const dropzone = ev.target.closest('[id^="tier-"]') || ev.target.closest('#items-pool');
+            if (dropzone) {
+                dropzone.classList.remove('drag-over');
+            }
+        }
+
+        function drag(ev) {
+            ev.dataTransfer.setData("text", ev.target.id);
+        }
+
+        function drop(ev) {
+            ev.preventDefault();
+            const targetRow = ev.target.closest('[id^="tier-"]');
+            if (!targetRow) return;
+
+            targetRow.classList.remove('drag-over');
+            const dataId = ev.dataTransfer.getData("text");
+            const draggedElement = document.getElementById(dataId);
+            
+            if (draggedElement) {
+                targetRow.appendChild(draggedElement);
+                saveStateToLocalStorage();
+            }
+        }
+
+        function dropToPool(ev) {
+            ev.preventDefault();
+            const pool = document.getElementById('items-pool');
+            pool.classList.remove('drag-over');
+
+            const dataId = ev.dataTransfer.getData("text");
+            const draggedElement = document.getElementById(dataId);
+
+            if (draggedElement) {
+                pool.appendChild(draggedElement);
+                saveStateToLocalStorage();
+            }
+        }
+
+        const tierColors = [
+            'bg-rose-600', 'bg-orange-500', 'bg-amber-500', 
+            'bg-emerald-600', 'bg-cyan-600', 'bg-indigo-600', 
+            'bg-purple-600', 'bg-fuchsia-600', 'bg-slate-700'
+        ];
+
+        function changeTierColor(tierId) {
+            const index = tiers.findIndex(t => t.id === tierId);
+            if (index === -1) return;
+
+            const currentBg = tiers[index].color;
+            let nextIndex = (tierColors.indexOf(currentBg) + 1) % tierColors.length;
+            if (nextIndex < 0) nextIndex = 0;
+
+            tiers[index].color = tierColors[nextIndex];
+            renderTiers();
+            restoreDraggedItemsToTiers();
+            saveStateToLocalStorage();
+        }
+
+        function updateTierName(tierId, newName) {
+            const tier = tiers.find(t => t.id === tierId);
+            if (tier) {
+                tier.name = newName;
+                saveStateToLocalStorage();
+            }
+        }
+
+        function addNewTier() {
+            const randomColor = tierColors[Math.floor(Math.random() * tierColors.length)];
+            const newId = 'tier-' + Date.now();
+            tiers.push({
+                id: newId,
+                name: 'NEW',
+                color: randomColor
+            });
+            renderTiers();
+            restoreDraggedItemsToTiers();
+            saveStateToLocalStorage();
+            showToast("เพิ่มแถวจัดอันดับสำเร็จแล้ว", "text-emerald-400");
+        }
+
+        function deleteTier(tierId) {
+            const tierContainer = document.getElementById(tierId);
+            const pool = document.getElementById('items-pool');
+            
+            if (tierContainer && pool) {
+                const itemsInTier = Array.from(tierContainer.children);
+                itemsInTier.forEach(item => {
+                    pool.appendChild(item);
+                });
+            }
+
+            tiers = tiers.filter(t => t.id !== tierId);
+            renderTiers();
+            restoreDraggedItemsToTiers();
+            saveStateToLocalStorage();
+            showToast("ลบแถวจัดอันดับแล้ว", "text-rose-400");
+        }
+
+        function moveTier(index, direction) {
+            index = parseInt(index);
+            if (direction === 'up' && index > 0) {
+                const temp = tiers[index];
+                tiers[index] = tiers[index - 1];
+                tiers[index - 1] = temp;
+            } else if (direction === 'down' && index < tiers.length - 1) {
+                const temp = tiers[index];
+                tiers[index] = tiers[index + 1];
+                tiers[index + 1] = temp;
+            }
+            renderTiers();
+            restoreDraggedItemsToTiers();
+            saveStateToLocalStorage();
+        }
+
+        function openCustomItemModal() {
+            document.getElementById('custom-item-modal').classList.remove('hidden');
+        }
+
+        function closeCustomItemModal() {
+            document.getElementById('custom-item-modal').classList.add('hidden');
+            document.getElementById('custom-fullname').value = '';
+            document.getElementById('custom-dept').value = '';
+        }
+
+        function selectThemeColor(colorClass) {
+            selectedColorClass = colorClass;
+            const buttons = document.querySelectorAll('.theme-color-btn');
+            buttons.forEach(btn => {
+                btn.classList.remove('border-indigo-500');
+                btn.classList.add('border-transparent');
+            });
+            event.target.classList.remove('border-transparent');
+            event.target.classList.add('border-indigo-500');
+        }
+
+        function createCustomCoworker() {
+            const fullname = document.getElementById('custom-fullname').value.trim();
+            const prefix = document.getElementById('custom-prefix').value;
+            const dept = document.getElementById('custom-dept').value.trim() || 'ทั่วไป';
+
+            if (!fullname) {
+                showToast("กรุณากรอกชื่อ-นามสกุล", "text-rose-400");
+                return;
+            }
+
+            const cleanName = prefix ? `${prefix}${fullname}` : fullname;
+            const initialChars = fullname.slice(0, 2);
+
+            const newCoworker = {
+                id: 'cw-custom-' + Date.now(),
+                title: prefix,
+                name: cleanName,
+                initials: initialChars,
+                group: 'custom-department',
+                isCustom: true
+            };
+
+            coworkerDb.unshift(newCoworker);
+            renderItemsPool();
+            closeCustomItemModal();
+            saveStateToLocalStorage();
+            showToast(`เพิ่มคุณ "${fullname}" เข้าระบบแล้ว!`, "text-emerald-400");
+        }
+
+        function removeCoworker(id, ev) {
+            if (ev) ev.stopPropagation();
+            coworkerDb = coworkerDb.filter(cw => cw.id !== id);
+            
+            const el = document.getElementById(id);
+            if (el) el.remove();
+
+            renderItemsPool();
+            saveStateToLocalStorage();
+            showToast("นำรายชื่อออกจากระบบแล้ว", "text-amber-500");
+        }
+
+        // Custom notification Toast alert
+        function showToast(message, iconColor = "text-indigo-400") {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toast-message');
+            const toastIcon = document.getElementById('toast-icon');
+
+            toastMsg.innerText = message;
+            toastIcon.className = iconColor;
+
+            toast.classList.remove('hidden');
+            setTimeout(() => {
+                toast.classList.remove('translate-y-10', 'opacity-0');
+            }, 50);
+
+            setTimeout(() => {
+                toast.classList.add('translate-y-10', 'opacity-0');
+                setTimeout(() => {
+                    toast.classList.add('hidden');
+                }, 300);
+            }, 3000);
+        }
+
+        let tempPlacedItemsStore = {}; 
+
+        function saveStateToLocalStorage() {
+            const state = {
+                tiers: tiers,
+                coworkerDb: coworkerDb,
+                assignedItems: {}
+            };
+
+            tiers.forEach(t => {
+                const tierDiv = document.getElementById(t.id);
+                if (tierDiv) {
+                    state.assignedItems[t.id] = Array.from(tierDiv.children).map(child => child.id);
+                }
+            });
+
+            localStorage.setItem('coworker_tier_list_state', JSON.stringify(state));
+        }
+
+        function restoreDraggedItemsToTiers() {
+            tiers.forEach(t => {
+                const targetTierDiv = document.getElementById(t.id);
+                if (targetTierDiv && tempPlacedItemsStore[t.id]) {
+                    tempPlacedItemsStore[t.id].forEach(itemId => {
+                        const itemEl = document.getElementById(itemId);
+                        if (itemEl) {
+                            targetTierDiv.appendChild(itemEl);
+                        }
+                    });
+                }
+            });
+            updateTempPlacedStore();
+        }
+
+        function updateTempPlacedStore() {
+            tempPlacedItemsStore = {};
+            tiers.forEach(t => {
+                const tierDiv = document.getElementById(t.id);
+                if (tierDiv) {
+                    tempPlacedItemsStore[t.id] = Array.from(tierDiv.children).map(child => child.id);
+                }
+            });
+        }
+
+        function loadSavedState() {
+            const saved = localStorage.getItem('coworker_tier_list_state');
+            if (saved) {
+                try {
+                    const state = JSON.parse(saved);
+                    tiers = state.tiers;
+                    coworkerDb = state.coworkerDb;
+                    
+                    renderTiers();
+                    renderItemsPool();
+
+                    setTimeout(() => {
+                        Object.keys(state.assignedItems).forEach(tierId => {
+                            const tierDiv = document.getElementById(tierId);
+                            if (tierDiv) {
+                                state.assignedItems[tierId].forEach(itemId => {
+                                    const itemEl = document.getElementById(itemId);
+                                    if (itemEl) {
+                                        tierDiv.appendChild(itemEl);
+                                    }
+                                });
+                            }
+                        });
+                        updateTempPlacedStore();
+                    }, 100);
+
+                } catch (e) {
+                    console.error("Error restoring localStorage", e);
+                }
+            } else {
+                updateTempPlacedStore();
+            }
+        }
+
+        function resetToDefault() {
+            const userConfirmed = document.createElement('div');
+            if (confirm("คุณแน่ใจหรือไม่ที่จะล้างตารางทั้งหมดและคืนค่าเริ่มต้นเพื่อนร่วมงานตามไฟล์อ้างอิง?")) {
+                localStorage.removeItem('coworker_tier_list_state');
+                tiers = [
+                    { id: 'tier-s', name: 'S', color: 'bg-rose-600' },
+                    { id: 'tier-a', name: 'A', color: 'bg-orange-500' },
+                    { id: 'tier-b', name: 'B', color: 'bg-amber-500' },
+                    { id: 'tier-c', name: 'C', color: 'bg-emerald-600' },
+                    { id: 'tier-d', name: 'D', color: 'bg-indigo-600' }
+                ];
+                coworkerDb = [...defaultCoworkers];
+                
+                renderTiers();
+                renderItemsPool();
+                updateTempPlacedStore();
+                showToast("คืนค่ารายชื่อเพื่อนร่วมงานทั้งหมดสำเร็จ!");
+            }
+        }
+
+        function exportToImage() {
+            const container = document.getElementById('tier-list-container');
+            showToast("กำลังสร้างไฟล์รูปภาพความละเอียดสูง กรุณารอสักครู่...", "text-indigo-400");
+
+            html2canvas(container, {
+                useCORS: true,
+                backgroundColor: '#0f172a',
+                scale: 2 
+            }).then(canvas => {
+                const image = canvas.toDataURL("image/png");
+                const link = document.createElement('a');
+                link.download = 'coworkers-tier-list.png';
+                link.href = image;
+                link.click();
+                
+                showToast("ดาวน์โหลดรูปภาพจัด Tier List สำเร็จ!", "text-emerald-400");
+            }).catch(err => {
+                console.error("Error generating canvas", err);
+                showToast("ไม่สามารถส่งออกภาพได้", "text-rose-400");
+            });
+        }
+    </script>
+</body>
+</html>
